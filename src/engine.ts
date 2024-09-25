@@ -32,8 +32,6 @@ export type ExporterFileOptions = {
 
 export type ExporterOptions = ExporterConsoleOptions | ExporterFileOptions;
 
-export type 
-
 export class Engine implements Logger {
 
     private _exporters: { [key: string]: Console } = {
@@ -167,7 +165,13 @@ export class Engine implements Logger {
             console.log(typeof part, index);
 
             if (typeof part === 'function') {
-                return part();
+                return part({
+                    level,
+                    time: {
+                        seconds,
+                        nanoseconds
+                    }
+                });
             }
 
             return part;
