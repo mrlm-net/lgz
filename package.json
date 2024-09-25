@@ -1,0 +1,52 @@
+{
+    "name": "@mrlm.net/lgz",
+    "version": "0.1.0",
+    "description": "Simple Node.js Command Line Intefrace abstract framework to make console apps blazing fast with zero config and small efforts!",
+    "license": "Apache-2.0",
+    "type": "module",
+    "homepage": "https://github.com/mrlm-net/lgz#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mrlm-net/lgz.git"
+    },
+    "bugs": {
+        "url": "https://github.com/mrlm-net/lgz/issues",
+        "email": "support@mrlm.net"
+    },
+    "author": {
+        "name": "MRLM.NET",
+        "email": "martin@hrasek.email"
+    },
+    "scripts": {
+        "build": "npx vite build",
+        "build:dev": "npx vite build -w",
+        "publish": "npm publish --access public",
+        "test": "npx vitest",
+        "serve": "concurrently \"yarn build:dev\" \"yarn run test\""
+    },
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "files": [
+        "docs",
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/index.js"
+        }
+    },
+    "devDependencies": {
+        "@types/node": "^22.5.5",
+        "@types/yargs": "^17.0.33",
+        "concurrently": "^9.0.1",
+        "typescript": "~5.4.2",
+        "vite": "^5.4.7",
+        "vite-plugin-dts": "^4.2.1",
+        "vitest": "^2.1.1"
+    },
+    "dependencies": {
+        "glob": "^11.0.0",
+        "yargs": "^17.7.2"
+    },
+    "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+}

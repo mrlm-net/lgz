@@ -1,1 +1,1 @@
-# lgz
+# @mrlm.net/lgz
