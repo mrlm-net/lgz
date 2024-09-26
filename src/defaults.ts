@@ -1,5 +1,6 @@
 import { EngineSettings } from "./engine";
 
 export const EngineDefaults: EngineSettings = {
-    colorMode: "true"
+    colorMode: "true",
+    verbose: false
 }

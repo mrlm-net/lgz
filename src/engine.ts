@@ -5,12 +5,14 @@ import { Exporters, ExporterSettings, ExportersSettings, ExporterType } from './
 import { EngineDefaults } from './defaults';
 import { Severity } from './severity';
 import { Message } from './message';
-import { Colors } from './colors';
+import { ANSI_REGEX, Colors } from './colors';
+import { Colorize } from './colorizer';
 
 export type EngineSettings = {
     defaultExporter?: boolean;
     colorMode?: EngineColorModes;
     exporters?: ExportersSettings;
+    verbose?: boolean;
 };
 
 export type EngineColorModes = "true" | "default" | "false";
@@ -21,10 +23,16 @@ export class Engine {
 
     private _settings: EngineSettings;
 
+    private _timer: [number, number] = process.hrtime();
+
     constructor(settings?: EngineSettings) {
         this._settings = { ...EngineDefaults, ...(settings || {}) };
         if (this._settings.defaultExporter !== false) {
             this._setDefaultExporter();
+        }
+
+        if (this._settings.colorMode !== "default") {
+            process.env.FORCE_COLOR = "0";
         }
         
         this._registerExporters(this._settings.exporters || {});
@@ -77,12 +85,18 @@ export class Engine {
             this._outputMessage(name, level, this._formatMessage(level, message, true));
             return;    
         }
-
         this._outputMessage(name, level, this._formatMessage(level, message));
     }
 
     private _outputMessage(name: string, level: Severity, message: Message[]): void {
         switch (true) {
+            case this._isDebugLevel(level):
+                if (this._settings.verbose === true) {
+                    this._exporters[name].handler.trace(...message);
+                    break;
+                }
+                this._exporters[name].handler.debug(...message);
+                break;
             case this._isErrorLevel(level):
                 this._exporters[name].handler.error(...message);
                 break;
@@ -92,8 +106,7 @@ export class Engine {
             case this._isNoticeLevel(level):
                 this._exporters[name].handler.info(...message);
                 break;
-            case this._isInformationalLevel(level):
-            case this._isDebugLevel(level):    
+            case this._isInformationalLevel(level):    
             default:
                 this._exporters[name].handler.log(...message);
                 break;
@@ -101,18 +114,27 @@ export class Engine {
     }
 
     private _formatMessage(level: Severity, message: Message[], colorized?: boolean): Message[] {
-        message = message.map(this._resolveMessage);
+        message = message.map(
+            (part: Message) => this._resolveMessage(level, part)
+        );
 
-        if (colorized) {
+        if (colorized === true) {
             return this._appllyColorByLevel(level, message);
         }
+
+        (part: Message) => (part as string).replace(ANSI_REGEX, "") as Message;
 
         return message;
     }
 
-    private _resolveMessage(part: Message): string {
+    private _resolveMessage(level: Severity, part: Message): string {
         if (typeof part === 'function') {
-            return part() as string;
+            return part({
+                colorizer: Colorize,
+                elapsed: this._getElapsedTime(),
+                level: level,
+                started: this._timer
+            }) as string;
         }
 
         return part as string;
@@ -231,5 +253,9 @@ export class Engine {
                 };
                 break;
         }       
+    }
+
+    private _getElapsedTime(): [number, number] {
+        return process.hrtime(this._timer);
     }
 }

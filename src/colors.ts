@@ -1,3 +1,5 @@
+export const ANSI_REGEX = /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+
 export enum Colors {
     NONE = "\x1b[0m",
     RED = "\x1b[31m",
