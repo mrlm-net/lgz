@@ -111,55 +111,34 @@ export class Engine {
             case Severity.ALERT:
             case Severity.EMERGENCY:
             case Severity.ERROR:
-                message.forEach((part: Message) => {
-                    if (this._settings.colorMode === "true") {
-                        output.push(Colors.RED);
-                        output.push(part);
-                        output.push(Colors.RESET);
-                    } else {
-                        output.push(part);
-                    }
-                });
+                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.RED));
                 break;
             case Severity.WARNING:
-                message.forEach((part: Message) => {
-                    if (this._settings.colorMode === "true") {
-                        output.push(Colors.YELLOW);
-                        output.push(part);
-                        output.push(Colors.RESET);
-                    } else {
-                        output.push(part);
-                    }
-                });
+                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.YELLOW));
                 break;
             case Severity.NOTICE:
-                message.forEach((part: Message) => {
-                    if (this._settings.colorMode === "true") {
-                        output.push(Colors.CYAN);
-                        output.push(part);
-                        output.push(Colors.RESET);
-                    } else {
-                        output.push(part);
-                    }
-                });
+                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.CYAN));
                 break;
             case Severity.INFORMATIONAL:
             case Severity.DEBUG:
             default:
-                message.forEach((part: Message) => {
-                    if (this._settings.colorMode === "true") {
-                        output.push(Colors.BLUE);
-                        output.push(part);
-                        output.push(Colors.RESET);
-                    } else {
-                        output.push(part);
-                    }
-                });
+                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.WHITE));
                 break;
         }
 
         return output;
-        
+    }
+
+    private _handleColorMode(output: Message[], message: Message, color: Colors): Message[] {
+        if (this._settings.colorMode === "true") {
+            output.push(color);
+            output.push(message);
+            output.push(Colors.RESET);
+        } else {
+            output.push(message);
+        }
+
+        return output;
     }
 
     private _setDefaultExporter(): void {
