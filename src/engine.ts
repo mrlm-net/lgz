@@ -1,21 +1,29 @@
 import { Console } from 'console';
 import { createWriteStream, PathLike } from "fs";
 
-import { Exporters, ExporterSettings, ExportersSettings, ExporterType } from './exporter';
+import { Exporters, ExporterSettings, ExportersSettings, ExporterTypes } from './exporter';
 import { EngineDefaults } from './defaults';
 import { Severity } from './severity';
 import { Message } from './message';
 import { ANSI_REGEX, Colors } from './colors';
 import { Colorize } from './colorizer';
+import { Prompt } from './prompt';
 
 export type EngineSettings = {
     defaultExporter?: boolean;
-    colorMode?: EngineColorModes;
+    colorMode?: EngineColorMode;
     exporters?: ExportersSettings;
+    level?: Severity;
     verbose?: boolean;
 };
 
-export type EngineColorModes = "true" | "default" | "false";
+export type EngineColorMode = EngineColorModes;
+
+export enum EngineColorModes {
+    TRUE    = "true",
+    DEFAULT = "default",
+    FALSE   = "false"
+};
 
 export class Engine {
 
@@ -27,7 +35,7 @@ export class Engine {
 
     constructor(settings?: EngineSettings) {
         this._settings = { ...EngineDefaults, ...(settings || {}) };
-        if (this._settings.defaultExporter !== false) {
+        if (this._settings.defaultExporter === true) {
             this._setDefaultExporter();
         }
 
@@ -71,7 +79,7 @@ export class Engine {
     }
 
     public unregisterExporter(name: string): void {
-        delete this._exporters[name];
+        this._exporters[name] ? delete this._exporters[name] : null;
     }
 
     public log(level: Severity, ...message: Message): void {
@@ -81,7 +89,7 @@ export class Engine {
     }
 
     private _handleMessage(name: string, level: Severity, ...message: Message): void {
-        if (this._exporters[name].settings.type === ExporterType.CONSOLE) {
+        if (this._exporters[name].settings.type === ExporterTypes.CONSOLE) {
             this._outputMessage(name, level, this._formatMessage(level, message, true));
             return;    
         }
@@ -90,23 +98,23 @@ export class Engine {
 
     private _outputMessage(name: string, level: Severity, message: Message[]): void {
         switch (true) {
-            case this._isDebugLevel(level):
+            case this._isDebugLevelGroup(level):
                 if (this._settings.verbose === true) {
                     this._exporters[name].handler.trace(...message);
                     break;
                 }
                 this._exporters[name].handler.debug(...message);
                 break;
-            case this._isErrorLevel(level):
+            case this._isErrorLevelGroup(level):
                 this._exporters[name].handler.error(...message);
                 break;
-            case this._isWarningLevel(level):
+            case this._isWarningLevelGroup(level):
                 this._exporters[name].handler.warn(...message);
                 break;
-            case this._isNoticeLevel(level):
+            case this._isNoticeLevelGroup(level):
                 this._exporters[name].handler.info(...message);
                 break;
-            case this._isInformationalLevel(level):    
+            case this._isInformationalLevelGroup(level):    
             default:
                 this._exporters[name].handler.log(...message);
                 break;
@@ -144,23 +152,23 @@ export class Engine {
         const output: Message[] = [];
 
         switch (true) {
-            case this._isErrorLevel(level):
+            case this._isErrorLevelGroup(level):
                 message.forEach(
                     (part: Message) => this._handleColorMode(output, part, Colors.RED)
                 );
                 break;
-            case this._isWarningLevel(level):
+            case this._isWarningLevelGroup(level):
                 message.forEach(
                     (part: Message) => this._handleColorMode(output, part, Colors.YELLOW)
                 );
                 break;
-            case this._isNoticeLevel(level):
+            case this._isNoticeLevelGroup(level):
                 message.forEach(
                     (part: Message) => this._handleColorMode(output, part, Colors.CYAN)
                 );
                 break;
-            case this._isInformationalLevel(level):
-            case this._isDebugLevel(level):
+            case this._isInformationalLevelGroup(level):
+            case this._isDebugLevelGroup(level):
             default:
                 message.forEach(
                     (part: Message) => this._handleColorMode(output, part, Colors.WHITE)
@@ -171,23 +179,23 @@ export class Engine {
         return output;
     }
 
-    private _isDebugLevel(level: Severity): boolean {
+    private _isDebugLevelGroup(level: Severity): boolean {
         return level === Severity.DEBUG;
     }
 
-    private _isInformationalLevel(level: Severity): boolean {
+    private _isInformationalLevelGroup(level: Severity): boolean {
         return level === Severity.INFORMATIONAL;
     }
 
-    private _isNoticeLevel(level: Severity): boolean {
+    private _isNoticeLevelGroup(level: Severity): boolean {
         return level === Severity.NOTICE;
     }
 
-    private _isWarningLevel(level: Severity): boolean {
+    private _isWarningLevelGroup(level: Severity): boolean {
         return level === Severity.WARNING
     }
 
-    private _isErrorLevel(level: Severity): boolean {
+    private _isErrorLevelGroup(level: Severity): boolean {
         return [
             Severity.CRITICAL,
             Severity.ALERT,
@@ -211,7 +219,7 @@ export class Engine {
     private _setDefaultExporter(): void {
         this._registerExporter(
             "__DEFAULT__", {
-                type: ExporterType.CONSOLE,
+                type: ExporterTypes.CONSOLE,
                 options: {}
                 
             }
@@ -226,7 +234,7 @@ export class Engine {
 
     private _registerExporter(name: string, exporter: ExporterSettings): void {
         switch (exporter.type) {
-            case ExporterType.FILE:
+            case ExporterTypes.FILE:
                 this._exporters[name] = {
                     handler: new Console({
                         inspectOptions: { colors: (this._settings.colorMode === "default") ? "auto" : false as any },
@@ -240,7 +248,7 @@ export class Engine {
                     settings: exporter
                 }
                 break;
-            case ExporterType.CONSOLE:
+            case ExporterTypes.CONSOLE:
             default:
                 this._exporters[name] = {
                     handler: new Console({

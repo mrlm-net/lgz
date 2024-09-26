@@ -1,6 +1,9 @@
-import { EngineSettings } from "./engine";
+import { EngineColorMode, EngineSettings } from "./engine";
+import { Severity } from "./severity";
 
 export const EngineDefaults: EngineSettings = {
-    colorMode: "true",
-    verbose: false
+    colorMode: "true" as EngineColorMode,
+    defaultExporter: true,
+    level: Severity.INFORMATIONAL,
+    verbose: true
 }

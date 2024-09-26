@@ -20,7 +20,9 @@ export type ExporterSettingsOptions = {
 
 export type ExportersSettings = { [key: string]: ExporterSettings };
 
-export enum ExporterType {
+export type ExporterType = ExporterTypes;
+
+export enum ExporterTypes {
     CONSOLE = "console",
     FILE    = "file"
 }
