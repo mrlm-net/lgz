@@ -1,6 +1,6 @@
 import { Severity } from "./severity";
 
-export type Formatter = (() => string);
+export type Formatter = ((input?: FormatterInput) => string);
 
 export type FormatterInput = {
     elapsed: [number, number];  

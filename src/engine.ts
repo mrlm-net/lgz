@@ -101,13 +101,7 @@ export class Engine {
     }
 
     private _formatMessage(level: Severity, message: Message[], colorized?: boolean): Message[] {
-        message = message.map((part: Message) => {
-            if (typeof part === 'function') {
-                part = part();
-            }
-
-            return part;
-        });
+        message = message.map(this._resolveMessage);
 
         if (colorized) {
             return this._appllyColorByLevel(level, message);
@@ -116,23 +110,39 @@ export class Engine {
         return message;
     }
 
+    private _resolveMessage(part: Message): string {
+        if (typeof part === 'function') {
+            return part() as string;
+        }
+
+        return part as string;
+    }
+
     private _appllyColorByLevel(level: Severity, message: Message[]): Message[] {
         const output: Message[] = [];
-        
+
         switch (true) {
             case this._isErrorLevel(level):
-                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.RED));
+                message.forEach(
+                    (part: Message) => this._handleColorMode(output, part, Colors.RED)
+                );
                 break;
             case this._isWarningLevel(level):
-                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.YELLOW));
+                message.forEach(
+                    (part: Message) => this._handleColorMode(output, part, Colors.YELLOW)
+                );
                 break;
             case this._isNoticeLevel(level):
-                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.CYAN));
+                message.forEach(
+                    (part: Message) => this._handleColorMode(output, part, Colors.CYAN)
+                );
                 break;
             case this._isInformationalLevel(level):
             case this._isDebugLevel(level):
             default:
-                message.forEach((part: Message) => this._handleColorMode(output, part, Colors.WHITE));
+                message.forEach(
+                    (part: Message) => this._handleColorMode(output, part, Colors.WHITE)
+                );
                 break;
         }
 
@@ -220,7 +230,6 @@ export class Engine {
                     settings: exporter
                 };
                 break;
-        }
-        
+        }       
     }
 }
