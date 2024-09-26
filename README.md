@@ -1,4 +1,4 @@
-# @mrlm.net/lgz
+# @mrlm.net/logz
 
 > This package is now in PRE-RELEASE state, feel free to use it, but expect that API might slightly change!
 
@@ -21,13 +21,13 @@ This package is provided as standard `NPM` module via public registry, so use yo
 __YARN__
 
 ```shell
-$ yarn add @mrlm.net/lgz
+$ yarn add @mrlm.net/logz
 ```
 
 __NPM__
 
 ```shell
-$ npm install --save @mrlm.net/lgz
+$ npm install --save @mrlm.net/logz
 ```
 
 ## Usage
@@ -39,7 +39,7 @@ Package is exporting `Logger` interface via `Engine` class and also subpackages 
 __Basic usage__
 
 ```typescript
-import { Engine } from '@mrlm.net/lgz'
+import { Engine } from '@mrlm.net/logz'
 // Create instance of Logger interface
 const logger = new Engine;
 // Log message via the Logger interface
@@ -51,7 +51,7 @@ logger.info("Your message")
 As mentioned above this package is also exproting `autoloader` sub module which creates singleton instance and returns it via module export to your code. This feature gives you the possibility to globaly manage your application logging through single global accessible interface.
 
 ```typescript
-import Logger from '@mrlm.net/lgz/autoloader'
+import Logger from '@mrlm.net/logz/autoloader'
 // With autoloader you can directly start using Logger interface
 Logger.info("Your message")
 ```

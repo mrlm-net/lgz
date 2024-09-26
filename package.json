@@ -1,16 +1,16 @@
 {
-    "name": "@mrlm.net/lgz",
+    "name": "@mrlm.net/logz",
     "version": "0.1.0",
     "description": "Simple Node.js Command Line Intefrace abstract framework to make console apps blazing fast with zero config and small efforts!",
     "license": "Apache-2.0",
     "type": "module",
-    "homepage": "https://github.com/mrlm-net/lgz#readme",
+    "homepage": "https://github.com/mrlm-net/logz#readme",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/mrlm-net/lgz.git"
+        "url": "git+https://github.com/mrlm-net/logz.git"
     },
     "bugs": {
-        "url": "https://github.com/mrlm-net/lgz/issues",
+        "url": "https://github.com/mrlm-net/logz/issues",
         "email": "support@mrlm.net"
     },
     "author": {
