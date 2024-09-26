@@ -10,7 +10,9 @@ export default defineConfig({
       formats: ["es"],
       // Could also be a dictionary or array of multiple entry points
       entry: {
-        index: resolve(__dirname, "src/index.ts")
+        index: resolve(__dirname, "src/index.ts"),
+        logger: resolve(__dirname, "src/autoloader.ts"),
+        colorizer: resolve(__dirname, "src/colorizer.ts")
       },
       name: pkg.name,
       // the proper extensions will be added

@@ -7,7 +7,7 @@ import { Severity } from './severity';
 import { Message } from './message';
 import { ANSI_REGEX, Colors } from './colors';
 import { Colorize } from './colorizer';
-import { Prompt } from './prompt';
+import { Logger } from './logger';
 
 export type EngineSettings = {
     defaultExporter?: boolean;
@@ -25,7 +25,7 @@ export enum EngineColorModes {
     FALSE   = "false"
 };
 
-export class Engine {
+export class Engine implements Logger {
 
     private _exporters: Exporters = {};
 
@@ -74,6 +74,18 @@ export class Engine {
         this.log(Severity.EMERGENCY, ...message);
     }
 
+    public setLevel(level: Severity): void {
+        this._settings.level = level;
+    }
+
+    public setVerbose(verbose: boolean): void {
+        this._settings.verbose = verbose;
+    }
+
+    public setColorMode(mode: EngineColorMode): void {
+        this._settings.colorMode = mode;
+    }
+
     public registerExporter(name: string, exporter: ExporterSettings): void {
         this._registerExporter(name, exporter);
     }
@@ -83,6 +95,10 @@ export class Engine {
     }
 
     public log(level: Severity, ...message: Message): void {
+        if (!this._shouldDisplay(level)) {
+            return;
+        }
+
         for (const name in this._exporters) {;
             this._handleMessage(name, level, ...message);
         }
@@ -130,9 +146,18 @@ export class Engine {
             return this._appllyColorByLevel(level, message);
         }
 
-        (part: Message) => (part as string).replace(ANSI_REGEX, "") as Message;
+        message = message.map(
+            (part: Message) => (typeof part === "string") 
+                ? (part as string).replace(ANSI_REGEX, "") as Message 
+                : part
+        );
+
 
         return message;
+    }
+
+    private _shouldDisplay(level: Severity): boolean {
+        return level <= (this._settings.level || Severity.DEBUG);
     }
 
     private _resolveMessage(level: Severity, part: Message): string {

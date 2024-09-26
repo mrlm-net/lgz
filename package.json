@@ -33,6 +33,12 @@
     "exports": {
         ".": {
             "import": "./dist/index.js"
+        },
+        "./logger": {
+            "import": "./dist/logger.js"
+        },
+        "./colorize": {
+            "import": "./dist/colorizer.js"
         }
     },
     "devDependencies": {

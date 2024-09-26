@@ -47,3 +47,9 @@ export class Colorize {
     }
 
 }
+
+export {
+    Colors
+}
+
+export default Colorize;
