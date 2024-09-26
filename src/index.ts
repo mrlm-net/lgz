@@ -1,25 +1,25 @@
-import { Engine, ExporterType } from './engine';
+import { Engine } from './engine';
+import { ExporterType } from './exporter';
 import { Severity } from './severity';
 
-export {
-    Engine,
-    Severity
-}
-
 const eng = new Engine({
-    console: {
-        type: ExporterType.CONSOLE,
-        options: {
-            stdout: process.stdout,
-            stderr: process.stderr
-        }
-    },
-    file: {
-        type: ExporterType.FILE,
-        options: {
-            stdout: 'stdout.log',
-            stderr: 'stderr.log'
+    defaultExporter: true,
+    exporters: {
+        file: {
+            type: ExporterType.FILE,
+            options: {
+                stdout: 'stdout.log',
+                stderr: 'stderr.log'
+            }
+        },
         }
     }
-});
-eng.info('Nečum', 'a makej', () => "ať se ti to líbí");
+);
+
+eng.log(Severity.EMERGENCY, "Emergency message", "file", eng, "hello");
+eng.log(Severity.CRITICAL, "Critical message");
+eng.log(Severity.ERROR, "Error message");
+eng.log(Severity.WARNING, "Warning message");
+eng.log(Severity.NOTICE, "Notice message");
+eng.log(Severity.INFORMATIONAL, "Informational message");
+eng.log(Severity.DEBUG, "Debug message");

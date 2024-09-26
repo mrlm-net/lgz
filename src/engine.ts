@@ -1,185 +1,215 @@
 import { Console } from 'console';
-import { createWriteStream, PathLike } from 'fs';
+import { createWriteStream, PathLike } from "fs";
 
-import { Logger } from './logger';
+import { Exporters, ExporterSettings, ExportersSettings, ExporterType } from './exporter';
+import { EngineDefaults } from './defaults';
 import { Severity } from './severity';
 import { Message } from './message';
+import { Colors } from './colors';
 
-export type Exporter = Console;
-export type Exporters = { [key: string]: Exporter };
-
-export enum ExporterType {
-    CONSOLE = 'console',
-    FILE = 'file'
-}
-
-export type ExportersConfig = { [key: string]: ExporterConfig };
-
-export type ExporterConfig = {
-    type: ExporterType;
-    options?: ExporterOptions;
+export type EngineSettings = {
+    defaultExporter?: boolean;
+    colorMode?: EngineColorModes;
+    exporters?: ExportersSettings;
 };
 
-export type ExporterConsoleOptions = {
-    stdout?: NodeJS.WritableStream;
-    stderr?: NodeJS.WritableStream;
-}
+export type EngineColorModes = "true" | "default" | "false";
 
-export type ExporterFileOptions = {
-    stdout: string;
-    stderr?: string;
-}
+export class Engine {
 
-export type ExporterOptions = ExporterConsoleOptions | ExporterFileOptions;
+    private _exporters: Exporters = {};
 
-export class Engine implements Logger {
+    private _settings: EngineSettings;
 
-    private _exporters: { [key: string]: Console } = {
-        __DEFAULT__: new Console(process.stdout, process.stderr),  
-    };
-
-    private _timer: [number, number] = process.hrtime();
-
-    constructor(exporters: ExportersConfig = {}) {
-        this._registerExporters(exporters);
-    }
-
-    public log(level: Severity, ...message: Message): void {
-        this._exportMessage(level, ...message);
-    }
-
-    public emergency(...message: Message): void {
-        this._exportMessage(Severity.EMERGENCY, ...message);
-    }
-
-    public alert(...message: Message): void {
-        this._exportMessage(Severity.ALERT, ...message);
-    }
-
-    public critical(...message: Message): void {
-        this._exportMessage(Severity.CRITICAL, ...message);
+    constructor(settings?: EngineSettings) {
+        this._settings = { ...EngineDefaults, ...(settings || {}) };
+        if (this._settings.defaultExporter !== false) {
+            this._setDefaultExporter();
+        }
+        
+        this._registerExporters(this._settings.exporters || {});
     }
 
     public info(...message: Message): void {
-        this._exportMessage(Severity.INFORMATIONAL, ...message);
-    }
-
-    public warning(...message: Message): void {
-        this._exportMessage(Severity.WARNING, ...message);
-    }
-
-    public error(...message: Message): void {
-        this._exportMessage(Severity.ERROR, ...message);
+        this.log(Severity.INFORMATIONAL, ...message);
     }
 
     public debug(...message: Message): void {
-        this._exportMessage(Severity.DEBUG, ...message);
+        this.log(Severity.DEBUG, ...message);
     }
 
-    private _registerExporters(exporters: ExportersConfig): void {
-        Object.entries(exporters).forEach(
-            ([key, exporter]) => {
-                this._registerExporter(key, exporter);
-            }
-        );
+    public warning(...message: Message): void {
+        this.log(Severity.WARNING, ...message);
     }
 
-    private _registerExporter(name: string, exporter: ExporterConfig): void {
-        this._exporters[name] = this._createExporter(exporter);
+    public error(...message: Message): void {
+        this.log(Severity.ERROR, ...message);
     }
 
-    private _unregisterExporter(name: string): void {
+    public critical(...message: Message): void {
+        this.log(Severity.CRITICAL, ...message);
+    }
+
+    public alert(...message: Message): void {   
+        this.log(Severity.ALERT, ...message);
+    }
+
+    public emergency(...message: Message): void {
+        this.log(Severity.EMERGENCY, ...message);
+    }
+
+    public registerExporter(name: string, exporter: ExporterSettings): void {
+        this._registerExporter(name, exporter);
+    }
+
+    public unregisterExporter(name: string): void {
         delete this._exporters[name];
     }
 
-    private _createExporter(exporter: ExporterConfig): Exporter {
-        if (exporter.type === ExporterType.CONSOLE) {
-            return new Console(process.stdout, process.stderr);
+    public log(level: Severity, ...message: Message): void {
+        for (const name in this._exporters) {;
+            this._handleMessage(name, level, ...message);
         }
-        return new Console(
-            createWriteStream(exporter.options?.stdout as PathLike), 
-            createWriteStream(
-                exporter.options?.stderr 
-                    ? exporter.options?.stderr as PathLike 
-                    : exporter.options?.stdout as PathLike
-            )
-        );
     }
 
-    private _exportMessage(level: Severity, ...message: Message): void {
-        Object.entries(this._exporters).forEach(([key, exporter]) => {
-            switch (level) {
-                case Severity.EMERGENCY:
-                    exporter.trace(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.ALERT:
-                    exporter.trace(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.CRITICAL:
-                    exporter.trace(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.ERROR:
-                    exporter.error(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.WARNING:
-                    exporter.warn(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.NOTICE:
-                    exporter.info(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.INFORMATIONAL:
-                    exporter.info(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                case Severity.DEBUG:
-                    exporter.debug(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-                default:
-                    exporter.log(
-                        this._formatMessage(level, ...message)
-                    );
-                    break;
-            }  
-        });
+    private _handleMessage(name: string, level: Severity, ...message: Message): void {
+        if (this._exporters[name].settings.type === ExporterType.CONSOLE) {
+            this._outputMessage(name, level, this._formatMessage(level, message, true));
+            return;    
+        }
+
+        this._outputMessage(name, level, this._formatMessage(level, message));
     }
 
-    private _formatMessage(level: Severity, ...message: Message): string {
-        const [seconds, nanoseconds] = process.hrtime(this._timer);
+    private _outputMessage(name: string, level: Severity, message: Message[]): void {
+        switch (level) {
+            default:
+                this._exporters[name].handler.log(...message);
+        }
+    }
 
-        const messageOutput = message.map((part, index) => {
-            console.log(typeof part, index);
-
+    private _formatMessage(level: Severity, message: Message[], colorized?: boolean): Message[] {
+        message = message.map((part: Message) => {
             if (typeof part === 'function') {
-                return part({
-                    level,
-                    time: {
-                        seconds,
-                        nanoseconds
-                    }
-                });
+                part = part();
             }
 
             return part;
         });
 
+        if (colorized) {
+            return this._appllyColorByLevel(level, message);
+        }
 
-        return `[${seconds}.${nanoseconds}] ${Severity[level].toUpperCase()}: ${messageOutput.join(' ')}`;
+        return message;
+    }
+
+    private _appllyColorByLevel(level: Severity, message: Message[]): Message[] {
+        const output: Message[] = [];
+        switch (level) {
+            case Severity.CRITICAL:
+            case Severity.ALERT:
+            case Severity.EMERGENCY:
+            case Severity.ERROR:
+                message.forEach((part: Message) => {
+                    if (this._settings.colorMode === "true") {
+                        output.push(Colors.RED);
+                        output.push(part);
+                        output.push(Colors.RESET);
+                    } else {
+                        output.push(part);
+                    }
+                });
+                break;
+            case Severity.WARNING:
+                message.forEach((part: Message) => {
+                    if (this._settings.colorMode === "true") {
+                        output.push(Colors.YELLOW);
+                        output.push(part);
+                        output.push(Colors.RESET);
+                    } else {
+                        output.push(part);
+                    }
+                });
+                break;
+            case Severity.NOTICE:
+                message.forEach((part: Message) => {
+                    if (this._settings.colorMode === "true") {
+                        output.push(Colors.CYAN);
+                        output.push(part);
+                        output.push(Colors.RESET);
+                    } else {
+                        output.push(part);
+                    }
+                });
+                break;
+            case Severity.INFORMATIONAL:
+            case Severity.DEBUG:
+            default:
+                message.forEach((part: Message) => {
+                    if (this._settings.colorMode === "true") {
+                        output.push(Colors.BLUE);
+                        output.push(part);
+                        output.push(Colors.RESET);
+                    } else {
+                        output.push(part);
+                    }
+                });
+                break;
+        }
+
+        return output;
+        
+    }
+
+    private _setDefaultExporter(): void {
+        this._registerExporter(
+            "__DEFAULT__", {
+                type: ExporterType.CONSOLE,
+                options: {
+                    stdout: process.stdout, 
+                    stderr: process.stderr
+                }
+                
+            }
+        );
+    }
+
+    private _registerExporters(exporters: ExportersSettings): void {
+        for (const name in exporters) {
+            this._registerExporter(name, exporters[name]);
+        }
+    }
+
+    private _registerExporter(name: string, exporter: ExporterSettings): void {
+        switch (exporter.type) {
+            case ExporterType.FILE:
+                this._exporters[name] = {
+                    handler: new Console({
+                        inspectOptions: { colors: (this._settings.colorMode === "default") ? "auto" : false as any },
+                        stdout: createWriteStream(exporter.options.stdout as PathLike), 
+                        stderr: (exporter.options.stderr)
+                            ? createWriteStream(exporter.options.stderr as PathLike) 
+                            : createWriteStream(exporter.options.stdout as PathLike)
+
+                    }),
+                    name: name,
+                    settings: exporter
+                }
+                break;
+            case ExporterType.CONSOLE:
+            default:
+                this._exporters[name] = {
+                    handler: new Console({
+                        inspectOptions: { colors: (this._settings.colorMode === "default") ? "auto" : false as any },
+                        stdout: exporter.options.stdout ? exporter.options.stdout as NodeJS.WritableStream : process.stdout, 
+                        stderr: exporter.options.stderr ? exporter.options.stderr as NodeJS.WritableStream : process.stderr
+                    }),
+                    name: name,
+                    settings: exporter
+                };
+                break;
+        }
+        
     }
 }
-
-export default Engine;

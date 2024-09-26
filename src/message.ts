@@ -1,6 +1,3 @@
+import { Formatter } from "./formatter";
 
-export type Message = (string | MessageFormatter)[];
-
-export type MessageFormatter = (input?: MessageFormatterInput) => string;
-
-export type MessageFormatterInput = {};
+export type Message = any | Formatter
