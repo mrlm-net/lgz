@@ -14,7 +14,7 @@ export type ExporterSettings = {
 };
 
 export type ExporterSettingsOptions = {
-    stdout: PathLike | NodeJS.WritableStream;
+    stdout?: PathLike | NodeJS.WritableStream;
     stderr?: PathLike | NodeJS.WritableStream;
 };
 

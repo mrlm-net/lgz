@@ -82,9 +82,21 @@ export class Engine {
     }
 
     private _outputMessage(name: string, level: Severity, message: Message[]): void {
-        switch (level) {
+        switch (true) {
+            case this._isErrorLevel(level):
+                this._exporters[name].handler.error(...message);
+                break;
+            case this._isWarningLevel(level):
+                this._exporters[name].handler.warn(...message);
+                break;
+            case this._isNoticeLevel(level):
+                this._exporters[name].handler.info(...message);
+                break;
+            case this._isInformationalLevel(level):
+            case this._isDebugLevel(level):    
             default:
                 this._exporters[name].handler.log(...message);
+                break;
         }
     }
 
@@ -106,27 +118,50 @@ export class Engine {
 
     private _appllyColorByLevel(level: Severity, message: Message[]): Message[] {
         const output: Message[] = [];
-        switch (level) {
-            case Severity.CRITICAL:
-            case Severity.ALERT:
-            case Severity.EMERGENCY:
-            case Severity.ERROR:
+        
+        switch (true) {
+            case this._isErrorLevel(level):
                 message.forEach((part: Message) => this._handleColorMode(output, part, Colors.RED));
                 break;
-            case Severity.WARNING:
+            case this._isWarningLevel(level):
                 message.forEach((part: Message) => this._handleColorMode(output, part, Colors.YELLOW));
                 break;
-            case Severity.NOTICE:
+            case this._isNoticeLevel(level):
                 message.forEach((part: Message) => this._handleColorMode(output, part, Colors.CYAN));
                 break;
-            case Severity.INFORMATIONAL:
-            case Severity.DEBUG:
+            case this._isInformationalLevel(level):
+            case this._isDebugLevel(level):
             default:
                 message.forEach((part: Message) => this._handleColorMode(output, part, Colors.WHITE));
                 break;
         }
 
         return output;
+    }
+
+    private _isDebugLevel(level: Severity): boolean {
+        return level === Severity.DEBUG;
+    }
+
+    private _isInformationalLevel(level: Severity): boolean {
+        return level === Severity.INFORMATIONAL;
+    }
+
+    private _isNoticeLevel(level: Severity): boolean {
+        return level === Severity.NOTICE;
+    }
+
+    private _isWarningLevel(level: Severity): boolean {
+        return level === Severity.WARNING
+    }
+
+    private _isErrorLevel(level: Severity): boolean {
+        return [
+            Severity.CRITICAL,
+            Severity.ALERT,
+            Severity.EMERGENCY,
+            Severity.ERROR
+        ].includes(level);
     }
 
     private _handleColorMode(output: Message[], message: Message, color: Colors): Message[] {
@@ -145,10 +180,7 @@ export class Engine {
         this._registerExporter(
             "__DEFAULT__", {
                 type: ExporterType.CONSOLE,
-                options: {
-                    stdout: process.stdout, 
-                    stderr: process.stderr
-                }
+                options: {}
                 
             }
         );
